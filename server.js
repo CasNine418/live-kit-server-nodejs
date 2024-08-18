@@ -34,7 +34,6 @@ const getJoinToken = async (roomName, identity, createRoom) =>{
         const createRoom = params.createRoom;
 
         if(roomName === undefined || roomName === null){
-            // throw new Error('RoomName is required');
             return 'roomName is required';
         }
         if(participantName === undefined || participantName === null){
@@ -46,7 +45,7 @@ const getJoinToken = async (roomName, identity, createRoom) =>{
             return 'createRoom is required';
         }
 
-
+        // debug
         // const roomName = 'TestRoom';
         // const participantName = 'TestName';
         // const createRoom = '0';
@@ -58,15 +57,20 @@ const getJoinToken = async (roomName, identity, createRoom) =>{
         
         at.addGrant({ roomJoin: true, room: roomName });
 
+        clg(`CreateRoom statue: ${createRoom}`,'INFO','ServerProcess');
+
         if(createRoom === '0'){
             createHomeApi(roomName);
             clg('Try to Create a Room','INFO','ServerProcess')
+        } else {
+            clg('createRoom is not 0','WARN','ServerProcess');
         }
-
-        // console.log(at);
+        if(createRoom !== '0'){
+            roomCreateStatue = 2;
+            clg('No need to create a room','INFO','ServerProcess');
+        }
         return await at.toJwt();
     }
-    // console.log(await createToken());
     return await createToken();
 }
 
@@ -75,7 +79,7 @@ const createHomeApi = async (roomName) =>{
     const options = {
         name: roomName,
         emptyTimeout: 10 * 60, // 10min
-        maxParticipants: 20, //default 20
+        maxParticipants: 20, // default 20
     }
     RoomService.createRoom(options)
     .then((room) =>{
@@ -84,15 +88,13 @@ const createHomeApi = async (roomName) =>{
     })
     .catch((err)=>{
         roomCreateStatue = -1;
-        clg(`Err: ${err}`,'ERROR','ServerProcess');
+        clg(`Err on createRoom: ${err}`,'ERROR','ServerProcess');
     })
 }
 
 const getRoomList = async () =>{
-    // let returnData = null;
     try {
         const rooms = await RoomService.listRooms();
-        // clg(`Existing rooms: ${JSON.stringify(rooms)}`,'INFO','ServerProcess');
         clg('Try to get room list...','INFO','ServerProcess');
         return JSON.stringify(rooms);
     }
@@ -100,15 +102,6 @@ const getRoomList = async () =>{
         clg('Error getting room list','ERROR','ServerProcess');
         return "[]";
     }
-    // .then((rooms) =>{
-    //     clg(`Existing rooms: ${JSON.stringify(rooms)}`,'INFO','ServerProcess');
-    //     returnData = JSON.stringify(rooms);
-    //     return returnData;
-    // })
-    // .catch((err) =>{
-        // clg('Error getting room list','ERROR','ServerProcess');
-    //     return "[]";
-    // })
 }
 
 const app = express();
@@ -116,9 +109,9 @@ app.use(cors());
 const port = 3000;
 
 app.post('/getToken', async (req, res) =>{
-    //链接解析
+    // Url resolve
     /**
-     * @class {roomName: String, identity: String, createRoom: String}
+     * @class { roomName: String, identity: String, createRoom: String }
      */
     const _params = {};
     const params = req.url.substring(req.url.indexOf('?') + 1);
@@ -130,8 +123,6 @@ app.post('/getToken', async (req, res) =>{
     const token = await getJoinToken(_params.roomName, _params.identity, _params.createRoom);
 
     clg(`Token status: ${token}`,'WARN','POST');
-    // console.log(await getJoinToken());
-    // res.send(await getJoinToken());
     
     const waitRoomCreation = () => {
         return new Promise((resolve, reject) =>{
@@ -142,11 +133,12 @@ app.post('/getToken', async (req, res) =>{
                 } else if (roomCreateStatue === -1){
                     clearInterval(interval);
                     reject(new Error('Room creation failed'));
-                } else if (roomCreateStatue === 0){
+                } else if (roomCreateStatue === 2){
                     clearInterval(interval);
-                    reject(new Error('Server connected failed'));
+                    // reject(new Error('Server connected failed'));
+                    resolve();
                 }
-            }, 1000); // 每秒检查一次  
+            }, 600); 
         });  
     }; 
 
@@ -172,7 +164,6 @@ app.post('/getToken', async (req, res) =>{
 app.post('/getRoomList', async (req, res) =>{
     try{
         const roomList = JSON.parse(await getRoomList());
-        clg(`Get room list OK`,'INFO','POST');
         res.send(JSON.stringify({
             status: '200',
             data: {
@@ -190,6 +181,5 @@ app.post('/getRoomList', async (req, res) =>{
 })
 
 app.listen(port, () => {
-    // console.log(`Server listening on port ${port}`)
     clg(`Server listening on port ${port}`,'INFO','ServerStart');
 })
