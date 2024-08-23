@@ -5,6 +5,7 @@ A simple livekit room management, token issuance server
 ### Start
 
 ```bash
+npm install
 mkdir cert
 touch config.js
 node server.js
