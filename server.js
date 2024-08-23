@@ -16,6 +16,8 @@ import {
 import cors from 'cors';
 import clg from './utils/clg.js';
 import config from './config.js';
+import https from 'https';
+import fs from 'fs';
 
 
 let roomCreateStatue = 0;
@@ -106,7 +108,7 @@ const getRoomList = async () =>{
 
 const app = express();
 app.use(cors());
-const port = 3000;
+const port = config.port;
 
 app.post('/getToken', async (req, res) =>{
     // Url resolve
@@ -180,6 +182,17 @@ app.post('/getRoomList', async (req, res) =>{
     }
 })
 
-app.listen(port, () => {
-    clg(`Server listening on port ${port}`,'INFO','ServerStart');
+// app.listen(port, () => {
+//     clg(`Server listening on port ${port}`,'INFO','ServerStart');
+// })
+
+const httpsOptions = {
+    key: fs.readFileSync('./cert/privkey.key'), // 私钥
+    cert: fs.readFileSync('./cert/domain.crt'), // 证书 
+    ca: [fs.readFileSync('./cert/root_bundle.crt')] 
+}
+
+https.createServer(httpsOptions, app).listen(port, ()=>{
+    console.log('LiveKit Node Server v0.0.1');
+    clg(`Server is running at port ${port}`, 'INFO', 'ServerStart'); 
 })

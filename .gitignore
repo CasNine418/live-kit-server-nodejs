@@ -1,3 +1,5 @@
 node_modules/
+cert/
 server.js.bak
 config.js
+livekitNode.zip
