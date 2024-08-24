@@ -121,6 +121,8 @@ app.post('/getToken', async (req, res) =>{
         const t = item.split('=');
         _params[t[0]] = t[1];
     })
+
+    roomCreateStatue = 0;
     
     const token = await getJoinToken(_params.roomName, _params.identity, _params.createRoom);
 
@@ -182,9 +184,9 @@ app.post('/getRoomList', async (req, res) =>{
     }
 })
 
-// app.listen(port, () => {
-//     clg(`Server listening on port ${port}`,'INFO','ServerStart');
-// })
+app.listen(port, () => {
+    clg(`Server listening on port ${port}`,'INFO','ServerStart');
+})
 
 const httpsOptions = {
     key: fs.readFileSync('./cert/privkey.key'), // 私钥
@@ -192,7 +194,7 @@ const httpsOptions = {
     ca: [fs.readFileSync('./cert/root_bundle.crt')] 
 }
 
-https.createServer(httpsOptions, app).listen(port, ()=>{
-    console.log('LiveKit Node Server v0.0.1');
-    clg(`Server is running at port ${port}`, 'INFO', 'ServerStart'); 
-})
+// https.createServer(httpsOptions, app).listen(port, ()=>{
+//     console.log('LiveKit Node Server v0.0.1');
+//     clg(`Server is running at port ${port}`, 'INFO', 'ServerStart'); 
+// })
