@@ -11,7 +11,7 @@ import express from 'express';
 import {
     AccessToken,
     RoomServiceClient,
-    Room, //？这啥
+    Room,
 } from 'livekit-server-sdk';
 import cors from 'cors';
 import clg from './utils/clg.js';
@@ -106,6 +106,22 @@ const getRoomList = async () =>{
     }
 }
 
+const getRoomParticipants = async (objRoomName) =>{
+    const data = await RoomService.listParticipants(objRoomName);
+    return data;
+}
+
+// 未启用
+const removeParticipantHandle = async (objRoomName, objIdentity) =>{
+    await RoomService.removeParticipant(objRoomName, objIdentity)
+    .then(
+        clg(`${objRoomName} - ${objIdentity} removed`,'INFO','ServerProcess')
+    )
+    .catch((err)=>{
+        clg(`Err: ${err.message}`,'ERROR', 'ServerError: getRoomParticipants()')
+    })
+}
+
 const app = express();
 app.use(cors());
 const port = config.port;
@@ -174,6 +190,47 @@ app.post('/getRoomList', async (req, res) =>{
                 roomList: roomList,
             }
         }))
+    }
+    catch (err){
+        clg(err, 'ERROR', 'ServerProcess');
+        res.status(500).send(JSON.stringify({
+            status: '500',
+            error: err.message,
+        }));
+    }
+})
+
+app.post('/getRoomParticipants', async(req, res) =>{
+    const _params = {};
+    const params = req.url.substring(req.url.indexOf('?') + 1);
+    params.split('&').forEach(item =>{
+        const t = item.split('=');
+        _params[t[0]] = t[1];
+    })
+    try {
+        let resData = await getRoomParticipants(_params.roomName); 
+        clg(`Fetching ${_params.roomName} participants list`, 'INFO', 'POST')
+        res.send(JSON.stringify(resData));
+    }
+    catch (err){
+        clg(err, 'ERROR', 'ServerProcess');
+        res.status(500).send(JSON.stringify({
+            status: '500',
+            error: err.message,
+        }));
+    }
+})
+
+app.post('/removeParticipant', async(req, res) =>{
+    const _params = {};
+    const params = req.url.substring(req.url.indexOf('?') + 1);
+    params.split('&').forEach(item =>{
+        const t = item.split('=');
+        _params[t[0]] = t[1];
+    })
+
+    try {
+        res.status(403).send(JSON.stringify({status: 403, data: 'Sorry, your request is not available now'}));
     }
     catch (err){
         clg(err, 'ERROR', 'ServerProcess');
